@@ -1,15 +1,24 @@
+
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Estacao {
 
 	private int idEstacao;
-	List <Estacao> vizinhos = new ArrayList<>();
+	private List<Vizinho> vizinhos = new ArrayList<>();
+	private double custoF;
+	private double custoG;
+	private double custoH;
+	private Estacao pai;
 	
 	public Estacao(int idEstacao) {
 		this.idEstacao = idEstacao;
 	}
 
+	public Estacao() {}
+	
+	
 	
 	public int getIdEstacao() {
 		return idEstacao;
@@ -20,15 +29,49 @@ public class Estacao {
 	}
 
 
-	public List<Estacao> getVizinhos() {
+	public List<Vizinho> getVizinhos() {
 		return vizinhos;
 	}
 
 
-	public void setVizinhos(List<Estacao> vizinhos) {
+	public void setVizinhos(List<Vizinho> vizinhos) {
 		this.vizinhos = vizinhos;
 	}
+
+	public double getCustoF() {
+		return custoF;
+	}
+
+	public void setCustoF(double custoF) {
+		this.custoF = custoF;
+	}
+
+	public double getCustoG() {
+		return custoG;
+	}
+
+	public void setCustoG(double custoG) {
+		this.custoG = custoG;
+	}
+
+	public double getCustoH() {
+		return custoH;
+	}
+
+	public void setCustoH(double custoH) {
+		this.custoH = custoH;
+	}
+
+	public Estacao getPai() {
+		return pai;
+	}
+
+	public void setPai(Estacao pai) {
+		this.pai = pai;
+	}
 	
-	
+	 public String toString(){
+         return String.valueOf(idEstacao) ;
+ }
 	
 }
