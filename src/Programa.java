@@ -1,5 +1,4 @@
 
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,6 +12,8 @@ import java.util.Set;
 
 public class Programa {
 
+	static final double TEMPO_TROCA_LINHA = 4;
+
 	static double custoReal[][] = criaMatrizCusto();
 	static double heuristica[][] = criaMatrizHeuristica();
 	static List<Estacao> estacoes = criaEstacoes();
@@ -21,10 +22,6 @@ public class Programa {
 	public static void main(String[] args) {
 		Scanner in = new Scanner(System.in);
 
-		// for (Estacao e : estacoes.get(2).getVizinhos()) {
-		// System.out.println(e.getIdEstacao());
-		// }
-
 		System.out.print("Estação de origem: ");
 		int idOrigem = in.nextInt();
 		System.out.print("Estação de destino: ");
@@ -32,7 +29,7 @@ public class Programa {
 
 		addVizinhos();
 		aStar(estacoes.get(idOrigem - 1), estacoes.get(idDestino - 1));
-		
+
 		in.close();
 	}
 
@@ -41,101 +38,101 @@ public class Programa {
 
 		for (Estacao node = target; node != null; node = node.getPai()) {
 			path.add(node);
-			
+
 		}
 		Collections.reverse(path);
-		for(Estacao node : path) {
+		for (Estacao node : path) {
 			System.out.println("Estação: E" + node.getIdEstacao());
 			System.out.println("Valor F: " + node.getCustoF());
 			System.out.println("Valor G: " + node.getCustoG());
 			System.out.println("Valor H: " + node.getCustoH());
 			System.out.println("Pai :" + node.getPai());
 			System.out.println("----------------------------------");
-			
-		}
-		
 
+		}
 		return path;
 	}
 
 	public static void aStar(Estacao origem, Estacao destino) {
-		adicionaCusto(origem,destino);
-		Set<Estacao> explored = new HashSet<Estacao>();
-		PriorityQueue<Estacao> queue = new PriorityQueue<Estacao>(14, new Comparator<Estacao>() {
-			
+		adicionaCustoHeuristica(destino);
+		Set<Estacao> explored = new HashSet<>();
+		PriorityQueue<Estacao> queue = new PriorityQueue<>(20, new Comparator<Estacao>() {
+
 			public int compare(Estacao i, Estacao j) {
 				if (i.getCustoF() > j.getCustoF()) {
 					return 1;
-				}
-
-				else if (i.getCustoF() < j.getCustoF()) {
+				} else if (i.getCustoF() < j.getCustoF()) {
 					return -1;
-				}
-
-				else {
+				} else {
 					return 0;
 				}
 			}
-
 		});
 
-		origem.setCustoG(0);
 		queue.add(origem);
 
 		boolean found = false;
-	//	while (!found) {
+		while ((!queue.isEmpty()) && (!found)) {
+			Estacao current = queue.poll();
+			explored.add(current);
 
-			while ((!queue.isEmpty()) && (!found)) {
-				Estacao current = queue.poll();
-				explored.add(current);
+			if (current.getIdEstacao() == destino.getIdEstacao()) {
+				found = true;
+			}
 
-				if (current.getIdEstacao() == destino.getIdEstacao()) {
-					found = true;
+			for (Vizinho e : current.getVizinhos()) {
+				Estacao child = e.getEstacao();
+				double cost = e.getCusto();
+				
+				double temp_g_scores = current.getCustoG() + cost;
+				double temp_f_scores = temp_g_scores + child.getCustoH();
+
+				if ((explored.contains(child)) && (temp_f_scores >= child.getCustoF())) {
+					continue;
 				}
 
-				for (Vizinho e : current.getVizinhos()) {
-					Estacao child = e.getEstacao();
-					double cost = e.getCusto();
-					double temp_g_scores = current.getCustoG() + cost;
-					double temp_f_scores = temp_g_scores + child.getCustoH();
+				else if ((!queue.contains(child)) || (temp_f_scores < child.getCustoF())) {
+					child.setPai(current);
 
-					if ((explored.contains(child)) && (temp_f_scores >= child.getCustoF())) {
-						continue;
+					boolean trocaDeLinha = true;
+					for (CorLinha linha : child.getLinhas()) {
+						if (current.getLinhas().contains(linha)) {
+							trocaDeLinha = false;
+							break;
+						}
 					}
 
-					else if ((!queue.contains(child)) || (temp_f_scores < child.getCustoF())) {
-						child.setPai(current);
-						child.setCustoG(temp_g_scores);
-						child.setCustoF(temp_f_scores);
+					if (trocaDeLinha) {
+						System.out.println("----------------------- O usuário deve troca de linha nas estações");
+						temp_g_scores += TEMPO_TROCA_LINHA;
+						temp_f_scores += TEMPO_TROCA_LINHA;
+					}
 
-						if (queue.contains(child)) {
-							queue.remove(child);
-						}
+					child.setCustoG(temp_g_scores);
+					child.setCustoF(temp_f_scores);
 
+					if (!queue.contains(child)) {
+						// queue.remove(child);
 						queue.add(child);
-
 					}
 				}
 			}
-	//	}
-		System.out.println(returnPath(destino));
+		}
+		System.out.println("Rota: " + returnPath(destino) + "\nCusto total (minutos): " + destino.getCustoF());
 	}
 
-	public static void adicionaCusto(Estacao origem, Estacao destino) {
+	public static void adicionaCustoHeuristica(Estacao destino) {
 		for (Estacao e : estacoes) {
 			e.setCustoH(calculaFuncaoH(e, destino));
-			//e.setCustoG(calculaFuncaoG(origem, e));
-			//e.setCustoF(e.getCustoG() + e.getCustoH());
 		}
 	}
-	
+
 	public static void addVizinhos() {
 		for (Estacao e : estacoes) {
 			for (int i = 0; i < custoReal.length; i++) {
 				if (custoReal[e.getIdEstacao() - 1][i] > 0 || custoReal[i][e.getIdEstacao() - 1] > 0) {
 					Estacao estacaoVizinho = estacoes.get(i);
-					double custo = calculaFuncaoG(e, estacaoVizinho);
-					e.getVizinhos().add(new Vizinho(estacaoVizinho, custo));
+					e.getVizinhos().add(new Vizinho(estacaoVizinho, calculaFuncaoG(e, estacaoVizinho)));
 				}
 			}
 		}
@@ -146,22 +143,17 @@ public class Programa {
 		return (custoDistancia / VELOCIDADE) * 60;
 	}
 
-	// public static double funcaoCustoTotal(Estacao estacaoOrigem, Estacao
-	// estacaoDestino, Estacao estacaoAtual) {
-//		return calculaFuncaoG(estacaoAtual, estacaoAtual) + calculaFuncaoH(estacaoAtual, estacaoDestino);
-	// }
-
 	public static double calculaFuncaoG(Estacao origem, Estacao estacaoAtual) {
-		if(converteCustoParaMinutos(custoReal[origem.getIdEstacao() - 1][estacaoAtual.getIdEstacao() - 1]) != 0)
+		if (converteCustoParaMinutos(custoReal[origem.getIdEstacao() - 1][estacaoAtual.getIdEstacao() - 1]) != 0)
 			return converteCustoParaMinutos(custoReal[origem.getIdEstacao() - 1][estacaoAtual.getIdEstacao() - 1]);
-		
+
 		return converteCustoParaMinutos(custoReal[estacaoAtual.getIdEstacao() - 1][origem.getIdEstacao() - 1]);
 	}
 
 	public static double calculaFuncaoH(Estacao estacaoAtual, Estacao destino) {
-		if (converteCustoParaMinutos(heuristica[estacaoAtual.getIdEstacao() - 1][destino.getIdEstacao() - 1]) != 0) 
+		if (converteCustoParaMinutos(heuristica[estacaoAtual.getIdEstacao() - 1][destino.getIdEstacao() - 1]) != 0)
 			return converteCustoParaMinutos(heuristica[estacaoAtual.getIdEstacao() - 1][destino.getIdEstacao() - 1]);
-		
+
 		return converteCustoParaMinutos(heuristica[destino.getIdEstacao() - 1][estacaoAtual.getIdEstacao() - 1]);
 	}
 
@@ -174,11 +166,6 @@ public class Programa {
 	}
 
 	public static Map<CorLinha, Linha> criaLinhas(List<Estacao> estacoes) {
-		/*
-		 * List<Linha> linhas = new ArrayList<Linha>(); for(CorLinha cor :
-		 * CorLinha.values()) { linhas.add(new Linha(cor)); }
-		 */
-
 		Map<CorLinha, Linha> linhas = new Hashtable<CorLinha, Linha>();
 		for (CorLinha cor : CorLinha.values()) {
 			linhas.put(cor, new Linha());
@@ -189,7 +176,7 @@ public class Programa {
 		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(2));
 		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(3));
 		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(4));
-		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(6));
+		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(5));
 
 		linhas.get(CorLinha.VERDE).getEstacoes().add(estacoes.get(3));
 		linhas.get(CorLinha.VERDE).getEstacoes().add(estacoes.get(7));
@@ -200,7 +187,7 @@ public class Programa {
 		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(2));
 		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(8));
 		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(10));
-		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(13));
+		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(12));
 
 		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(1));
 		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(4));
@@ -209,9 +196,33 @@ public class Programa {
 		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(8));
 		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(9));
 
+		estacoes.get(0).getLinhas().add(CorLinha.AZUL);
+		estacoes.get(1).getLinhas().add(CorLinha.AZUL);
+		estacoes.get(2).getLinhas().add(CorLinha.AZUL);
+		estacoes.get(3).getLinhas().add(CorLinha.AZUL);
+		estacoes.get(4).getLinhas().add(CorLinha.AZUL);
+		estacoes.get(5).getLinhas().add(CorLinha.AZUL);
+
+		estacoes.get(3).getLinhas().add(CorLinha.VERDE);
+		estacoes.get(7).getLinhas().add(CorLinha.VERDE);
+		estacoes.get(11).getLinhas().add(CorLinha.VERDE);
+		estacoes.get(12).getLinhas().add(CorLinha.VERDE);
+		estacoes.get(13).getLinhas().add(CorLinha.VERDE);
+
+		estacoes.get(2).getLinhas().add(CorLinha.VERMELHO);
+		estacoes.get(8).getLinhas().add(CorLinha.VERMELHO);
+		estacoes.get(10).getLinhas().add(CorLinha.VERMELHO);
+		estacoes.get(12).getLinhas().add(CorLinha.VERMELHO);
+
+		estacoes.get(1).getLinhas().add(CorLinha.AMARELO);
+		estacoes.get(4).getLinhas().add(CorLinha.AMARELO);
+		estacoes.get(6).getLinhas().add(CorLinha.AMARELO);
+		estacoes.get(7).getLinhas().add(CorLinha.AMARELO);
+		estacoes.get(8).getLinhas().add(CorLinha.AMARELO);
+		estacoes.get(9).getLinhas().add(CorLinha.AMARELO);
+
 		return linhas;
 	}
-
 
 	public static double[][] criaMatrizCusto() {
 		double t2[][] =

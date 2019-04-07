@@ -11,6 +11,7 @@ public class Estacao {
 	private double custoG;
 	private double custoH;
 	private Estacao pai;
+	private List<CorLinha> linhas = new ArrayList<>();
 	
 	public Estacao(int idEstacao) {
 		this.idEstacao = idEstacao;
@@ -70,8 +71,17 @@ public class Estacao {
 		this.pai = pai;
 	}
 	
-	 public String toString(){
+	 public List<CorLinha> getLinhas() {
+		return linhas;
+	}
+
+	public void setLinhas(List<CorLinha> linhas) {
+		this.linhas = linhas;
+	}
+
+	public String toString(){
          return String.valueOf(idEstacao) ;
  }
+	 
 	
 }
