@@ -38,87 +38,98 @@ public class Programa {
 
 		for (Estacao node = target; node != null; node = node.getPai()) {
 			path.add(node);
-
 		}
 		Collections.reverse(path);
-		for (Estacao node : path) {
-			System.out.println("Estação: E" + node.getIdEstacao());
-			System.out.println("Valor F: " + node.getCustoF());
-			System.out.println("Valor G: " + node.getCustoG());
-			System.out.println("Valor H: " + node.getCustoH());
-			System.out.println("Pai :" + node.getPai());
-			System.out.println("----------------------------------");
-
-		}
 		return path;
 	}
 
 	public static void aStar(Estacao origem, Estacao destino) {
-		adicionaCustoHeuristica(destino);
-		Set<Estacao> explored = new HashSet<>();
-		PriorityQueue<Estacao> queue = new PriorityQueue<>(20, new Comparator<Estacao>() {
+		if (origem.getIdEstacao() == destino.getIdEstacao()) {
+			System.out.println("Você já se encontra no destino informado.");
+		} else {
 
-			public int compare(Estacao i, Estacao j) {
-				if (i.getCustoF() > j.getCustoF()) {
-					return 1;
-				} else if (i.getCustoF() < j.getCustoF()) {
-					return -1;
-				} else {
-					return 0;
+			adicionaCustoHeuristica(destino);
+			Set<Estacao> explored = new HashSet<>();
+			PriorityQueue<Estacao> queue = new PriorityQueue<>(14, new Comparator<Estacao>() {
+
+				public int compare(Estacao i, Estacao j) {
+					if (i.getCustoF() > j.getCustoF()) {
+						return 1;
+					} else if (i.getCustoF() < j.getCustoF()) {
+						return -1;
+					} else {
+						return 0;
+					}
 				}
-			}
-		});
+			});
 
-		queue.add(origem);
+			queue.add(origem);
 
-		boolean found = false;
-		while ((!queue.isEmpty()) && (!found)) {
-			Estacao current = queue.poll();
-			explored.add(current);
+			CorLinha linhaAtual = null;
+			CorLinha linhaAnterior = null;
+			boolean found = false;
+			while ((!queue.isEmpty()) && (!found)) {
+				Estacao current = queue.poll();
+				linhaAnterior = current.getLinhaAtual();
+				explored.add(current);
 
-			if (current.getIdEstacao() == destino.getIdEstacao()) {
-				found = true;
-			}
-
-			for (Vizinho e : current.getVizinhos()) {
-				Estacao child = e.getEstacao();
-				double cost = e.getCusto();
-				
-				double temp_g_scores = current.getCustoG() + cost;
-				double temp_f_scores = temp_g_scores + child.getCustoH();
-
-				if ((explored.contains(child)) && (temp_f_scores >= child.getCustoF())) {
-					continue;
+				if (current.getIdEstacao() == destino.getIdEstacao()) {
+					found = true;
+					break;
 				}
 
-				else if ((!queue.contains(child)) || (temp_f_scores < child.getCustoF())) {
-					child.setPai(current);
+				for (Vizinho e : current.getVizinhos()) {
+					Estacao child = e.getEstacao();
+					double cost = e.getCusto();
 
-					boolean trocaDeLinha = true;
-					for (CorLinha linha : child.getLinhas()) {
-						if (current.getLinhas().contains(linha)) {
-							trocaDeLinha = false;
-							break;
+					double temp_g_scores = current.getCustoG() + cost;
+					double temp_f_scores = temp_g_scores + child.getCustoH();
+
+					if ((explored.contains(child)) && (temp_f_scores >= child.getCustoF())) {
+						continue;
+					} else if ((!queue.contains(child)) || (temp_f_scores < child.getCustoF())) {
+						if (child.getPai() == null) {
+							child.setPai(current);
+							
+							for (CorLinha linha : child.getLinhas()) {
+								if (current.getLinhas().contains(linha)) {
+									linhaAtual = linha;
+									current.setLinhaAtual(linha);
+									child.setLinhaAtual(linha);
+									if (current.getIdEstacao() == origem.getIdEstacao()) {
+										linhaAnterior = linha;
+									}
+									break;
+								}
+							}
+
+							if (!linhaAtual.equals(linhaAnterior)) {
+								temp_g_scores += TEMPO_TROCA_LINHA;
+								temp_f_scores += TEMPO_TROCA_LINHA;
+							}
+							child.setCustoG(temp_g_scores);
+							child.setCustoF(temp_f_scores);
 						}
-					}
-
-					if (trocaDeLinha) {
-						System.out.println("----------------------- O usuário deve troca de linha nas estações");
-						temp_g_scores += TEMPO_TROCA_LINHA;
-						temp_f_scores += TEMPO_TROCA_LINHA;
-					}
-
-					child.setCustoG(temp_g_scores);
-					child.setCustoF(temp_f_scores);
-
-					if (!queue.contains(child)) {
-						// queue.remove(child);
+						if (queue.contains(child)) {
+							queue.remove(child);
+						}
 						queue.add(child);
+
 					}
 				}
+
+				/*
+				 * Estacao estMenorCusto = null; for (Vizinho v : current.getVizinhos()) {
+				 * Estacao child = v.getEstacao(); if (estMenorCusto == null) { estMenorCusto =
+				 * child; } else if (child.getCustoF() < estMenorCusto.getCustoF()) {
+				 * estMenorCusto = child; for (CorLinha linha : estMenorCusto.getLinhas()) { if
+				 * (current.getLinhas().contains(linha)) { linhaAnterior = linhaAtual; } } } }
+				 */
+
 			}
+			System.out.println("Rota: " + returnPath(destino) + "\nCusto total (minutos): " + destino.getCustoF());
 		}
-		System.out.println("Rota: " + returnPath(destino) + "\nCusto total (minutos): " + destino.getCustoF());
+
 	}
 
 	public static void adicionaCustoHeuristica(Estacao destino) {
@@ -225,44 +236,38 @@ public class Programa {
 	}
 
 	public static double[][] criaMatrizCusto() {
-		double t2[][] =
-				// E1 - E2 - E3 - E4 - E5 - E6 - E7 - E8 - E9 - E10 - E11 - E12 - E13 - E14
-				/* E1 */ { { 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E1
-						/* E2 */ { 0.0, 0.0, 8.5, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 3.5, 0.0, 0.0, 0.0, 0.0 }, // E2
-						/* E3 */ { 0.0, 0.0, 0.0, 6.3, 0.0, 0.0, 0.0, 0.0, 9.4, 0.0, 0.0, 0.0, 18.7, 0.0 }, // E3
-						/* E4 */ { 0.0, 0.0, 0.0, 0.0, 13.0, 0.0, 0.0, 15.3, 0.0, 0.0, 0.0, 0.0, 12.8, 0.0 }, // E4
-						/* E5 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 2.4, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E5
-						/* E6 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E6
-						/* E7 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E7
-						/* E8 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.6, 0.0, 0.0, 6.4, 0.0, 0.0 }, // E8
-						/* E9 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.2, 0.0, 0.0, 0.0 }, // E9
-						/* E10 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E10
-						/* E11 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E11
-						/* E12 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E12
-						/* E13 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.1 }, // E13
-						/* E14 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 } }; // E14
-
+		double t2[][] = /* E1 */ { { 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E1
+				/* E2 */ { 0.0, 0.0, 8.5, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 3.5, 0.0, 0.0, 0.0, 0.0 }, // E2
+				/* E3 */ { 0.0, 0.0, 0.0, 6.3, 0.0, 0.0, 0.0, 0.0, 9.4, 0.0, 0.0, 0.0, 18.7, 0.0 }, // E3
+				/* E4 */ { 0.0, 0.0, 0.0, 0.0, 13.0, 0.0, 0.0, 15.3, 0.0, 0.0, 0.0, 0.0, 12.8, 0.0 }, // E4
+				/* E5 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 2.4, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E5
+				/* E6 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E6
+				/* E7 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E7
+				/* E8 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.6, 0.0, 0.0, 6.4, 0.0, 0.0 }, // E8
+				/* E9 */ { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.2, 0.0, 0.0, 0.0 }, // E9
+				/* E10 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E10
+				/* E11 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E11
+				/* E12 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, // E12
+				/* E13 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.1 }, // E13
+				/* E14 */{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 } }; // E14
 		return t2;
 	}
 
 	public static double[][] criaMatrizHeuristica() {
-		double t1[][] =
-				// E1 - E2 - E3 - E4 - E5 - E6 - E7 - E8 - E9 - E10 - E11 - E12 - E13 - E14
-				{ { 0.0, 10.0, 18.5, 24.8, 36.4, 38.8, 35.8, 25.4, 17.6, 9.1, 16.7, 27.3, 27.6, 29.8 }, // E1
-						{ 0.0, 0.0, 8.5, 14.8, 26.6, 29.1, 26.1, 17.3, 10.0, 3.5, 15.5, 20.9, 19.1, 28.1 }, // E2
-						{ 0.0, 0.0, 0.0, 6.3, 18.2, 20.6, 17.6, 13.6, 9.4, 10.3, 19.5, 19.1, 12.1, 16.6 }, // E3
-						{ 0.0, 0.0, 0.0, 0.0, 12.0, 14.4, 11.5, 12.4, 12.6, 16.7, 23.6, 18.6, 10.6, 15.4 }, // E4
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 2.4, 19.4, 23.3, 28.2, 34.2, 24.8, 14.5, 17.9 }, // E5
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.3, 22.3, 25.7, 30.3, 36.7, 27.6, 15.2, 18.2 }, // E6
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 23.0, 27.3, 34.2, 25.7, 12.4, 15.6 }, // E7
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.2, 20.3, 16.1, 6.4, 22.7, 27.6 }, // E8
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 13.5, 11.2, 10.9, 21.2, 26.6 }, // E9
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 17.6, 24.2, 18.7, 21.2 }, // E10
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 14.2, 31.5, 35.5 }, // E11
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 28.8, 33.6 }, // E12
-						{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.1 }, // E13
-						{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } }; // E14
-
+		double t1[][] = { { 0.0, 10.0, 18.5, 24.8, 36.4, 38.8, 35.8, 25.4, 17.6, 9.1, 16.7, 27.3, 27.6, 29.8 }, // E1
+				{ 0.0, 0.0, 8.5, 14.8, 26.6, 29.1, 26.1, 17.3, 10.0, 3.5, 15.5, 20.9, 19.1, 28.1 }, // E2
+				{ 0.0, 0.0, 0.0, 6.3, 18.2, 20.6, 17.6, 13.6, 9.4, 10.3, 19.5, 19.1, 12.1, 16.6 }, // E3
+				{ 0.0, 0.0, 0.0, 0.0, 12.0, 14.4, 11.5, 12.4, 12.6, 16.7, 23.6, 18.6, 10.6, 15.4 }, // E4
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 2.4, 19.4, 23.3, 28.2, 34.2, 24.8, 14.5, 17.9 }, // E5
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.3, 22.3, 25.7, 30.3, 36.7, 27.6, 15.2, 18.2 }, // E6
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 23.0, 27.3, 34.2, 25.7, 12.4, 15.6 }, // E7
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.2, 20.3, 16.1, 6.4, 22.7, 27.6 }, // E8
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 13.5, 11.2, 10.9, 21.2, 26.6 }, // E9
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 17.6, 24.2, 18.7, 21.2 }, // E10
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 14.2, 31.5, 35.5 }, // E11
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 28.8, 33.6 }, // E12
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.1 }, // E13
+				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } }; // E14
 		return t1;
 	}
 }

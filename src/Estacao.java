@@ -12,6 +12,7 @@ public class Estacao {
 	private double custoH;
 	private Estacao pai;
 	private List<CorLinha> linhas = new ArrayList<>();
+	private CorLinha linhaAtual;
 	
 	public Estacao(int idEstacao) {
 		this.idEstacao = idEstacao;
@@ -77,6 +78,14 @@ public class Estacao {
 
 	public void setLinhas(List<CorLinha> linhas) {
 		this.linhas = linhas;
+	}
+
+	public CorLinha getLinhaAtual() {
+		return linhaAtual;
+	}
+
+	public void setLinhaAtual(CorLinha linhaAtual) {
+		this.linhaAtual = linhaAtual;
 	}
 
 	public String toString(){
