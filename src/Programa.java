@@ -1,4 +1,6 @@
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -127,7 +129,7 @@ public class Programa {
 				 */
 
 			}
-			System.out.println("Rota: " + returnPath(destino) + "\nCusto total (minutos): " + destino.getCustoF());
+			System.out.println("Rota: " + returnPath(destino) + "\nCusto total (minutos): " + new BigDecimal(destino.getCustoF()).setScale(1, RoundingMode.HALF_EVEN));
 		}
 
 	}
