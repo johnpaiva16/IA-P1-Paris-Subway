@@ -9,8 +9,9 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Scanner;
 import java.util.Set;
+
+import javax.swing.JOptionPane;
 
 public class Programa {
 
@@ -19,20 +20,15 @@ public class Programa {
 	static double custoReal[][] = criaMatrizCusto();
 	static double heuristica[][] = criaMatrizHeuristica();
 	static List<Estacao> estacoes = criaEstacoes();
-	static Map<CorLinha, Linha> linhas = criaLinhas(estacoes);
 
 	public static void main(String[] args) {
-		Scanner in = new Scanner(System.in);
-
-		System.out.print("Estação de origem: ");
-		int idOrigem = in.nextInt();
-		System.out.print("Estação de destino: ");
-		int idDestino = in.nextInt();
-
+		vinculaEstacoesELinhas();
 		addVizinhos();
+		
+		int idOrigem = Integer.parseInt(JOptionPane.showInputDialog(null, "Digite a Estação de origem: "));
+		int idDestino = Integer.parseInt(JOptionPane.showInputDialog(null, "Digite a Estação de destino: "));
+		
 		aStar(estacoes.get(idOrigem - 1), estacoes.get(idDestino - 1));
-
-		in.close();
 	}
 
 	public static List<Estacao> returnPath(Estacao target) {
@@ -47,7 +43,8 @@ public class Programa {
 
 	public static void aStar(Estacao origem, Estacao destino) {
 		if (origem.getIdEstacao() == destino.getIdEstacao()) {
-			System.out.println("Você já se encontra no destino informado.");
+			JOptionPane.showMessageDialog(null, "Você já se encontra no destino informado.");
+			//System.out.println("Você já se encontra no destino informado.");
 		} else {
 
 			adicionaCustoHeuristica(destino);
@@ -120,16 +117,11 @@ public class Programa {
 					}
 				}
 
-				/*
-				 * Estacao estMenorCusto = null; for (Vizinho v : current.getVizinhos()) {
-				 * Estacao child = v.getEstacao(); if (estMenorCusto == null) { estMenorCusto =
-				 * child; } else if (child.getCustoF() < estMenorCusto.getCustoF()) {
-				 * estMenorCusto = child; for (CorLinha linha : estMenorCusto.getLinhas()) { if
-				 * (current.getLinhas().contains(linha)) { linhaAnterior = linhaAtual; } } } }
-				 */
 
 			}
-			System.out.println("Rota: " + returnPath(destino) + "\nCusto total (minutos): " + new BigDecimal(destino.getCustoF()).setScale(1, RoundingMode.HALF_EVEN));
+			
+			JOptionPane.showMessageDialog(null, "Rota: " + returnPath(destino) + "\nCusto total: " + new BigDecimal(destino.getCustoF()).setScale(1, RoundingMode.HALF_EVEN)+" minutos");
+			//System.out.println("Rota: " + returnPath(destino) + "\nCusto total (minutos): " + new BigDecimal(destino.getCustoF()).setScale(1, RoundingMode.HALF_EVEN));
 		}
 
 	}
@@ -178,36 +170,11 @@ public class Programa {
 		return estacoes;
 	}
 
-	public static Map<CorLinha, Linha> criaLinhas(List<Estacao> estacoes) {
+	public static void vinculaEstacoesELinhas() {
 		Map<CorLinha, Linha> linhas = new Hashtable<CorLinha, Linha>();
 		for (CorLinha cor : CorLinha.values()) {
 			linhas.put(cor, new Linha());
 		}
-
-		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(0));
-		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(1));
-		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(2));
-		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(3));
-		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(4));
-		linhas.get(CorLinha.AZUL).getEstacoes().add(estacoes.get(5));
-
-		linhas.get(CorLinha.VERDE).getEstacoes().add(estacoes.get(3));
-		linhas.get(CorLinha.VERDE).getEstacoes().add(estacoes.get(7));
-		linhas.get(CorLinha.VERDE).getEstacoes().add(estacoes.get(11));
-		linhas.get(CorLinha.VERDE).getEstacoes().add(estacoes.get(12));
-		linhas.get(CorLinha.VERDE).getEstacoes().add(estacoes.get(13));
-
-		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(2));
-		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(8));
-		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(10));
-		linhas.get(CorLinha.VERMELHO).getEstacoes().add(estacoes.get(12));
-
-		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(1));
-		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(4));
-		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(6));
-		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(7));
-		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(8));
-		linhas.get(CorLinha.AMARELO).getEstacoes().add(estacoes.get(9));
 
 		estacoes.get(0).getLinhas().add(CorLinha.AZUL);
 		estacoes.get(1).getLinhas().add(CorLinha.AZUL);
@@ -234,7 +201,6 @@ public class Programa {
 		estacoes.get(8).getLinhas().add(CorLinha.AMARELO);
 		estacoes.get(9).getLinhas().add(CorLinha.AMARELO);
 
-		return linhas;
 	}
 
 	public static double[][] criaMatrizCusto() {
